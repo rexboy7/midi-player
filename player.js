@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', domReady);
 
 var activePlayer;
+var midiButtons;
 
 function $(id) {
   return document.getElementById(id);
@@ -12,20 +13,38 @@ function domReady() {
     soundfontUrl: "MIDI.js/soundfont/",
     instruments: [ "acoustic_grand_piano" ],
     callback: function() {
-      $('btn-little-star').disabled = false;
-      $('btn-little-star').addEventListener('click', playLittleStar);
+      initMIDIButtons();
       $('btn-update-speed').addEventListener('click', updateSpeed);
+      $('btn-stop').addEventListener('click', stopPlaying);
     }
   });
 }
 
-function playLittleStar() {
-  $('btn-little-star').disabled = true;
-  playMIDI('littlestar.mid');
+function initMIDIButtons() {
+  midiButtons = document.querySelectorAll('.midi-btn');
+  setButtonDisabled(false);
+  for (var i = 0; i < midiButtons.length; i++) {
+    hookListener(midiButtons[i]);
+  }
+}
+
+function setButtonDisabled(b) {
+  for (var i = 0; i < midiButtons.length; i++) {
+    midiButtons[i].disabled = b;
+  }
+}
+
+function hookListener(dom) {
+  dom.addEventListener('click', function() {
+    setButtonDisabled(true);
+    playMIDI(dom.dataset['src']);
+  });
 }
 
 function playMIDI(url) {
   console.log('playMIDI: ' + url);
+  $('message-section').hidden = false;
+  $('message').textContent = 'midi downloading';
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url);
   xhr.overrideMimeType("text/plain; charset=x-user-defined");
@@ -41,21 +60,26 @@ function playMIDI(url) {
       }
       playMIDIData(ff.join(""));
     } else if (xhr.readyState === 4) {
-      alert('status: ' + xhr.status);
+      $('message').textContent = 'failed to download midi file';
     }
   }
   xhr.send();
 }
 
 function playMIDIData(data) {
+  $('message').textContent = 'parsing file';
+
   midiFile = MidiFile(data);
+  $('message').textContent = 'pre-loading';
   activePlayer = Replayer(midiFile, MIDIChannel);
-  activePlayer.finishCallback = function() {
-    $('btn-little-star').disabled = false;
+  activePlayer.finishedCallback = function() {
+    $('message-section').hidden = true;
+    setButtonDisabled(false);
     $('control-section').hidden = true;
     activePlayer = null;
   };
   $('control-section').hidden = false;
+  $('message').textContent = 'playing';
   activePlayer.replay();
 }
 
@@ -69,4 +93,12 @@ function updateSpeed() {
   if (!isNaN(dSpeed)) {
     activePlayer.changeSpeed(dSpeed);
   }
+}
+
+function stopPlaying() {
+  if (!activePlayer) {
+    return;
+  }
+
+  activePlayer.stop();
 }

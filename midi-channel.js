@@ -3,7 +3,13 @@ function MIDIChannel(idx) {
   MIDI.programChange(this.channelIndex, 0);
 }
 
+var first = true;
+
 MIDIChannel.prototype.noteOn = function(note, velocity, delay) {
+  if (first) {
+    first = false;
+    console.log('first: ' + (new Date()));
+  }
   MIDI.noteOn(this.channelIndex, note, velocity, delay);
 };
 

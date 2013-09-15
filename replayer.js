@@ -9,6 +9,7 @@ function Replayer(midiFile, channelClass) {
   var channels = [];
   var timerID;
   var startTime;
+  var stop = false;
   
   for (var i = 0; i < midiFile.tracks.length; i++) {
     trackStates[i] = {
@@ -66,16 +67,25 @@ function Replayer(midiFile, channelClass) {
     } else {
       nextEventInfo = null;
       secondsToNextEvent = -1;
-      self.finished = true;
-      if (self.finishedCallback) {
-      	self.finishedCallback();
-      }
+      finish();
     }
   }
   
+  function finish() {
+  	self.finished = true;
+    if (self.finishedCallback) {
+      self.finishedCallback();
+    }
+  }
+
   getNextEvent();
   
   function scheduleNextTimer() {
+  	if (stop) {
+  		finish();
+  		return;
+  	}
+
     if (secondsToNextEvent < 0) {
       return;
     }
@@ -96,7 +106,8 @@ function Replayer(midiFile, channelClass) {
       return;
     }
     startTime = (new Date()).getTime();
-    timerID = window.setTimeout(scheduleNextTimer, secondsToNextEvent * 1000 * speed);
+    var nTimeSpan = secondsToNextEvent * 1000 * speed;
+    timerID = window.setTimeout(scheduleNextTimer, nTimeSpan);
   }
   
   function handleEvent() {
@@ -128,6 +139,10 @@ function Replayer(midiFile, channelClass) {
     scheduleNextTimer();
   }
 
+  function stopPlaying() {
+    stop = true;
+  }
+
   function changeSpeed(spd) {
   	if (spd < 0.1) {
   		return;
@@ -138,12 +153,13 @@ function Replayer(midiFile, channelClass) {
   	var diff = secondsToNextEvent * 1000 - elapsedTime;
   	window.clearTimeout(timerID);
   	timerID = window.setTimeout(scheduleNextTimer, diff * speed);
-  	console.log('speed: ', speed);
+    console.log('speed: ', speed);
   }
   
   var self = {
   	'changeSpeed': changeSpeed,
     'replay': replay,
+    'stop': stopPlaying,
     'finished': false, 
     'finishedCallback': null
   }
