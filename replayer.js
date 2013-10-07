@@ -10,6 +10,7 @@ function Replayer(midiFile, channelClass) {
   var timerID;
   var startTime;
   var stop = false;
+  var activeChannel = null;
   
   for (var i = 0; i < midiFile.tracks.length; i++) {
     trackStates[i] = {
@@ -120,6 +121,10 @@ function Replayer(midiFile, channelClass) {
         }
         break;
       case 'channel':
+        if (activeChannel !== null && activeChannel !== undefined
+            && activeChannel !== event.channel) {
+          return;
+        }
         switch (event.subtype) {
           case 'noteOn':
             channels[event.channel].noteOn(event.noteNumber, event.velocity, 0);
@@ -155,8 +160,13 @@ function Replayer(midiFile, channelClass) {
   	timerID = window.setTimeout(scheduleNextTimer, diff * speed);
     console.log('speed: ', speed);
   }
+
+  function setActiveChannel(channel) {
+    activeChannel = channel;
+  }
   
   var self = {
+    'setActiveChannel': setActiveChannel,
   	'changeSpeed': changeSpeed,
     'replay': replay,
     'stop': stopPlaying,

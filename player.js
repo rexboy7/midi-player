@@ -1,18 +1,26 @@
 
-document.addEventListener('DOMContentLoaded', domReady);
+window.onload = domReady;
+window.onerror = function(ex) {
+  alert('error: ' + ex.message);
+};
 
 var activePlayer;
 var midiButtons;
+var isChrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
+var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+var isSafari = navigator.userAgent.toLowerCase().indexOf('safari') > -1;
 
 function $(id) {
   return document.getElementById(id);
 }
 
 function domReady() {
+  $('message').textContent = 'Initialize MIDI player';
   MIDI.loadPlugin({
     soundfontUrl: "MIDI.js/soundfont/",
     instruments: [ "acoustic_grand_piano" ],
     callback: function() {
+      $('message').textContent = 'Ready';
       initMIDIButtons();
       $('btn-update-speed').addEventListener('click', updateSpeed);
       $('btn-stop').addEventListener('click', stopPlaying);
